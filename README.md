@@ -5,7 +5,9 @@ Checks price of your portfolio (WIP) and other cryptocurrencies from coingecko.c
 
 ## Usage
 
-```
+```console
+$ crypto-summary --help
+
 USAGE:
     crypto-summary [OPTIONS]
 
@@ -17,14 +19,11 @@ OPTIONS:
     -s, --search <search>...    Crypto you want to view
 ```
 
-## Example
+## Examples
 
-```
-crypto-summary -s cardano bitcoin litecoin
-```
-Output:
+```console 
+$ crypto-summary -s cardano bitcoin litecoin
 
-```
 Cardano
 Symbol: ada
 Market price: 2.03 USD
