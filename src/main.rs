@@ -1,8 +1,10 @@
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::fmt;
 
 use clap::{App, Arg};
 
+use url::{ParseError, Url};
 
 #[derive(Debug, Deserialize)]
 struct Coin {
@@ -18,6 +20,18 @@ impl Coin {
 
     fn get_7d(&self) -> &Vec<f32> {
         &self.market_data.sparkline_7d.price
+    }
+}
+
+impl fmt::Display for Coin {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}\nSymbol: {}\nMarket price: {} USD",
+            self.name.as_str(),
+            self.symbol.as_str(),
+            self.get_current_price("usd")
+        )
     }
 }
 
@@ -48,19 +62,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .get_matches();
 
+    let mut crypto_url = Url::parse("https://api.coingecko.com/").unwrap();
+    crypto_url
+        .query_pairs_mut()
+        .append_pair("tickers", "false")
+        .append_pair("market_data", "true")
+        .append_pair("community_data", "false")
+        .append_pair("developer_data", "false")
+        .append_pair("sparkline", "true");
+
     let crypto_names = matches.values_of("search").unwrap();
+    let mut coins = Vec::new();
 
     for elem in crypto_names {
-        println!("{}", elem);
+        let mut path = String::from("api/v3/coins/");
+        path.push_str(elem);
+
+        crypto_url.set_path(&path);
+
+        let resp = reqwest::get(crypto_url.as_str())
+            .await?
+            .json::<Coin>()
+            .await?;
+
+        coins.push(resp);
     }
 
-    let resp = reqwest::get("https://api.coingecko.com/api/v3/coins/bitcoin?tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=true")
-        .await?
-        .json::<Coin>()
-        .await?;
-    println!("{:#?}", resp);
-
-    println!("{}", resp.get_current_price("usd"));
+    for elem in coins.iter() {
+        println!("{}", elem);
+    }
 
     Ok(())
 }
