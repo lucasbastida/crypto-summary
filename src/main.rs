@@ -1,58 +1,7 @@
-use serde::Deserialize;
-use std::collections::HashMap;
-use std::fmt;
-use std::fs::File;
-
 use clap::{App, Arg};
 
-use url::{ParseError, Url};
-
-#[derive(Debug, Deserialize)]
-struct Coin {
-    name: String,
-    symbol: String,
-    market_data: Market,
-}
-
-impl Coin {
-    fn get_current_price(&self, currency: &str) -> f32 {
-        *self.market_data.current_price.get(currency).unwrap()
-    }
-
-    fn get_7d(&self) -> &Vec<f32> {
-        &self.market_data.sparkline_7d.price
-    }
-}
-
-impl fmt::Display for Coin {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}\nSymbol: {}\nMarket price: {} USD",
-            self.name.as_str(),
-            self.symbol.as_str(),
-            self.get_current_price("usd")
-        )
-    }
-}
-
-#[derive(Debug, Deserialize)]
-struct Market {
-    current_price: HashMap<String, f32>,
-    sparkline_7d: Sparkline,
-}
-
-#[derive(Debug, Deserialize)]
-struct Sparkline {
-    price: Vec<f32>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Record {
-    name: String,
-    amount: f32,
-    location: Option<String>,
-}
+mod crytocurrency;
+mod portfolio;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -71,48 +20,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .get_matches();
 
-    // Creating Url struct
-    let mut crypto_url = Url::parse("https://api.coingecko.com/").unwrap();
-    crypto_url
-        .query_pairs_mut()
-        .append_pair("tickers", "false")
-        .append_pair("market_data", "true")
-        .append_pair("community_data", "false")
-        .append_pair("developer_data", "false")
-        .append_pair("sparkline", "true");
-
     // grabbing cli search names
-    let crypto_names = matches.values_of("search").unwrap();
-    let mut coins = Vec::new();
+    let crypto_names = matches.values_of("search").unwrap().collect();
 
-    // for each crypto, deserialize json and place in vec
-    for elem in crypto_names {
-        let mut path = String::from("api/v3/coins/");
-        path.push_str(elem);
-
-        crypto_url.set_path(&path);
-
-        let resp = reqwest::get(crypto_url.as_str())
-            .await?
-            .json::<Coin>()
-            .await?;
-
-        coins.push(resp);
-    }
+    //load coin structs into a vector
+    let coins = crytocurrency::load_crypto(crypto_names).await?;
 
     // print vector of coin value
     for elem in coins.iter() {
         println!("{}", elem);
     }
 
-
-    let file = File::open("input/input.csv")?;
-    let mut rdr = csv::Reader::from_reader(file);
-
-    for result in rdr.deserialize() {
-        let record: Record = result?;
-        println!("{:?}", record);
-    }
+    portfolio::print_portfolio("input/input.csv");
 
     Ok(())
 }
