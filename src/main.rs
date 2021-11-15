@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
+use std::fs::File;
 
 use clap::{App, Arg};
 
@@ -46,8 +47,16 @@ struct Sparkline {
     price: Vec<f32>,
 }
 
+#[derive(Debug, Deserialize)]
+struct Record {
+    name: String,
+    amount: f32,
+    location: Option<String>,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // command line parser
     let matches = App::new("Crypto Price Checker")
         .version("1.0")
         .author("Lucas B. ")
@@ -62,6 +71,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .get_matches();
 
+    // Creating Url struct
     let mut crypto_url = Url::parse("https://api.coingecko.com/").unwrap();
     crypto_url
         .query_pairs_mut()
@@ -71,9 +81,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .append_pair("developer_data", "false")
         .append_pair("sparkline", "true");
 
+    // grabbing cli search names
     let crypto_names = matches.values_of("search").unwrap();
     let mut coins = Vec::new();
 
+    // for each crypto, deserialize json and place in vec
     for elem in crypto_names {
         let mut path = String::from("api/v3/coins/");
         path.push_str(elem);
@@ -88,8 +100,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         coins.push(resp);
     }
 
+    // print vector of coin value
     for elem in coins.iter() {
         println!("{}", elem);
+    }
+
+
+    let file = File::open("input/input.csv")?;
+    let mut rdr = csv::Reader::from_reader(file);
+
+    for result in rdr.deserialize() {
+        let record: Record = result?;
+        println!("{:?}", record);
     }
 
     Ok(())
