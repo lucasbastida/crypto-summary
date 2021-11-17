@@ -31,7 +31,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{}", elem);
     }
 
-    portfolio::print_portfolio("input/input.csv");
+
+    let mut records: Vec<portfolio::Record> = portfolio::get_records("input/input.csv");
+
+    portfolio::print_portfolio(&records);
+
+    //calculate value of record
+    for record in records.iter() {
+        let coin = crytocurrency::search_crypto(&record.name).await?;
+        let value = coin.get_current_price("usd") * record.amount;
+
+        println!("Value of {}: {}", coin.name, value);
+    }
 
     Ok(())
 }

@@ -5,17 +5,17 @@ use url::{ParseError, Url};
 
 #[derive(Debug, Deserialize)]
 pub struct Coin {
-    name: String,
-    symbol: String,
+    pub name: String,
+    pub symbol: String,
     market_data: Market,
 }
 
 impl Coin {
-    fn get_current_price(&self, currency: &str) -> f32 {
+    pub fn get_current_price(&self, currency: &str) -> f32 {
         *self.market_data.current_price.get(currency).unwrap()
     }
 
-    fn get_7d(&self) -> &Vec<f32> {
+    pub fn get_7d(&self) -> &Vec<f32> {
         &self.market_data.sparkline_7d.price
     }
 }
@@ -24,7 +24,7 @@ impl fmt::Display for Coin {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{}\nSymbol: {}\nMarket price: {} USD",
+            "{} ({}) Market price: {} USD",
             self.name.as_str(),
             self.symbol.as_str(),
             self.get_current_price("usd")
@@ -72,4 +72,27 @@ pub async fn load_crypto(crypto_names: Vec<&str>) -> Result<Vec<Coin>, Box<dyn s
     }
 
     Ok(coins)
+}
+
+pub async fn search_crypto(coin: &str) -> Result<Coin, Box<dyn std::error::Error>> {
+    let mut crypto_url = Url::parse("https://api.coingecko.com/").unwrap();
+    crypto_url
+        .query_pairs_mut()
+        .append_pair("tickers", "false")
+        .append_pair("market_data", "true")
+        .append_pair("community_data", "false")
+        .append_pair("developer_data", "false")
+        .append_pair("sparkline", "true");
+
+    let mut path = String::from("api/v3/coins/");
+    path.push_str(coin);
+
+    crypto_url.set_path(&path);
+
+    let resp = reqwest::get(crypto_url.as_str())
+        .await?
+        .json::<Coin>()
+        .await?;
+
+    Ok(resp)
 }
