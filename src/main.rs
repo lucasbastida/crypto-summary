@@ -4,6 +4,15 @@ use std::collections::HashMap;
 mod crytocurrency;
 mod portfolio;
 
+use serde::Deserialize;
+
+
+#[derive(Deserialize, Debug)]
+struct MailerConfig {
+    email_smtp_username: String,
+    email_smtp_pw: String,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // command line parser
@@ -71,7 +80,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         *counter += elem.amount * coins.get(name).unwrap().get_current_price("usd");
     }
 
-
     for (key, value) in sum.iter() {
         portfolio_string.push_str(&format!("Total value of {} : {}\n", key, value));
     }
@@ -81,8 +89,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let total = format!("Total value: ${}", total);
     portfolio_string.push_str(&total);
 
-    println!("{}" ,&total);
+    println!("{}", &total);
 
     println!("{}", portfolio_string);
+
+    dotenv::dotenv().expect("Failed to read .env file");
+    match envy::from_env::<MailerConfig>() {
+        Ok(config) => println!("{:?}", config),
+        Err(e) => println!("Couldn't read mailer config ({})", e),
+    };
+
     Ok(())
 }
