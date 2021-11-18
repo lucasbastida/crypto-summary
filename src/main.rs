@@ -18,33 +18,53 @@ struct MailerConfig {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // command line parser
+    // let matches = App::new("Crypto Price Checker")
+    //     .version("1.0")
+    //     .author("Lucas B. ")
+    //     .about("Checks price of your portfolio and other crypto from coingecko.com")
+    //     .arg(
+    //         Arg::with_name("search")
+    //             .help("Crypto you want to view")
+    //             .takes_value(true)
+    //             .short("s")
+    //             .long("search")
+    //             .multiple(true),
+    //     )
+    //     .get_matches();
+
     let matches = App::new("Crypto Price Checker")
         .version("1.0")
         .author("Lucas B. ")
         .about("Checks price of your portfolio and other crypto from coingecko.com")
         .arg(
-            Arg::with_name("search")
-                .help("Crypto you want to view")
+            Arg::new("file")
+                .about("file input")
                 .takes_value(true)
-                .short("s")
-                .long("search")
-                .multiple(true),
+                .short('f')
+                .long("file"),
+        )
+        .subcommand(
+            App::new("search").about("Search one or more crypto").arg(
+                Arg::new("name")
+                    .multiple_occurrences(true)
+                    .takes_value(true)
+                    .required(true),
+            ),
         )
         .get_matches();
 
-    // grabbing cli search names
-    let crypto_names = matches.values_of("search").unwrap().collect();
-
-    //load coin structs into a vector
-    let coins = crytocurrency::load_crypto(crypto_names).await?;
-
-    // print vector of coin value
-    for elem in coins.iter() {
-        println!("{}", elem);
+    match matches.subcommand() {
+        Some(("search", search_matches)) => {
+            // Now we have a reference to clone's matches
+            let crypto_names = search_matches.values_of("name").unwrap().collect();
+            search(crypto_names).await?;
+        }
+        None => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
+        _ => unreachable!(), // If all subcommands are defined above, anything else is unreachabe!()
     }
 
     //-------------------PORTFOLIO--------------------------------
-    let mut records: Vec<portfolio::Record> = portfolio::get_records("input/input.csv");
+    let records: Vec<portfolio::Record> = portfolio::get_records("input/input.csv");
 
     //calculate value of record
     let mut coins = HashMap::new();
@@ -106,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let email = Message::builder()
         .from("NoBody <nobody@domain.tld>".parse().unwrap())
-        .to("Hei <test@mail.com>".parse().unwrap())
+        .to("Hei <test@example.com>".parse().unwrap())
         .subject("Happy new year")
         .body(portfolio_string)
         .unwrap();
@@ -123,6 +143,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match mailer.send(&email) {
         Ok(_) => println!("Email sent successfully!"),
         Err(e) => panic!("Could not send email: {:?}", e),
+    }
+
+    Ok(())
+}
+
+async fn search(names: Vec<&str>) -> Result<(), Box<dyn std::error::Error>> {
+    //load coin structs into a vector
+    let coins = crytocurrency::load_crypto(names).await?;
+
+    // print vector of coin value
+    for elem in coins.iter() {
+        println!("{}", elem);
     }
 
     Ok(())
