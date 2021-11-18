@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     for (key, value) in sum.iter() {
-        portfolio_string.push_str(&format!("Total {} : {}\n", key, value));
+        portfolio_string.push_str(&format!("Total value of {} : {}\n", key, value));
     }
 
     println! {"{:?}", sum};
