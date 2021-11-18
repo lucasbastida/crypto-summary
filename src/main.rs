@@ -80,7 +80,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let total = format!("Total value: ${}", total);
     portfolio_string.push_str(&total);
-    portfolio_string.push_str("\n");
 
     println!("{}" ,&total);
 
