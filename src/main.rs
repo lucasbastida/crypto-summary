@@ -6,11 +6,13 @@ mod portfolio;
 
 use serde::Deserialize;
 
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::{Message, SmtpTransport, Transport};
 
 #[derive(Deserialize, Debug)]
 struct MailerConfig {
-    email_smtp_username: String,
-    email_smtp_pw: String,
+    username: String,
+    pw: String,
 }
 
 #[tokio::main]
@@ -94,10 +96,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", portfolio_string);
 
     dotenv::dotenv().expect("Failed to read .env file");
-    match envy::from_env::<MailerConfig>() {
-        Ok(config) => println!("{:?}", config),
-        Err(e) => println!("Couldn't read mailer config ({})", e),
+    let config = match envy::prefixed("EMAIL_SMTP_").from_env::<MailerConfig>() {
+        Ok(config) => {
+            println!("{:?}", config);
+            config
+        }
+        Err(e) => panic!("Couldn't read mailer config ({})", e),
     };
+
+    let email = Message::builder()
+        .from("NoBody <nobody@domain.tld>".parse().unwrap())
+        .to("Hei <test@mail.com>".parse().unwrap())
+        .subject("Happy new year")
+        .body(portfolio_string)
+        .unwrap();
+
+    let creds = Credentials::new(config.username, config.pw);
+
+    // Open a remote connection to gmail
+    let mailer = SmtpTransport::relay("smtp.gmail.com")
+        .unwrap()
+        .credentials(creds)
+        .build();
+
+    // Send the email
+    match mailer.send(&email) {
+        Ok(_) => println!("Email sent successfully!"),
+        Err(e) => panic!("Could not send email: {:?}", e),
+    }
 
     Ok(())
 }
