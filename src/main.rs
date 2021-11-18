@@ -32,10 +32,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{}", elem);
     }
 
+    //-------------------PORTFOLIO--------------------------------
     let mut records: Vec<portfolio::Record> = portfolio::get_records("input/input.csv");
 
     //calculate value of record
     let mut coins = HashMap::new();
+
+    let mut portfolio_string = String::new();
 
     let mut total: f32 = 0.0;
 
@@ -44,10 +47,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let value = coin.get_current_price("usd") * record.amount;
 
-        println!(
+        let record_value = format!(
             "Value of {}: {} USD in {}",
             coin.name, value, record.location
         );
+
+        println!("{}", record_value);
+
+        portfolio_string.push_str(&record_value);
+        portfolio_string.push_str("\n");
+
         total += value;
 
         coins.insert(coin.name.clone().to_lowercase(), coin);
@@ -62,9 +71,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         *counter += elem.amount * coins.get(name).unwrap().get_current_price("usd");
     }
 
+
+    for (key, value) in sum.iter() {
+        portfolio_string.push_str(&format!("Total {} : {}\n", key, value));
+    }
+
     println! {"{:?}", sum};
 
-    println!("Total value: ${}", total);
+    let total = format!("Total value: ${}", total);
+    portfolio_string.push_str(&total);
+    portfolio_string.push_str("\n");
 
+    println!("{}" ,&total);
+
+    println!("{}", portfolio_string);
     Ok(())
 }
