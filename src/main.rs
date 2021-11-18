@@ -32,21 +32,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{}", elem);
     }
 
-
     let mut records: Vec<portfolio::Record> = portfolio::get_records("input/input.csv");
 
     //calculate value of record
-    let mut coins: HashMap<String,crytocurrency::Coin> = HashMap::new();
+    let mut coins = HashMap::new();
 
     let mut total: f32 = 0.0;
 
     for record in records.iter() {
         let coin = crytocurrency::search_crypto(&record.name).await?;
+
         let value = coin.get_current_price("usd") * record.amount;
 
-        println!("Value of {}: {} USD in {}", coin.name, value, record.location);
+        println!(
+            "Value of {}: {} USD in {}",
+            coin.name, value, record.location
+        );
         total += value;
+
+        coins.insert(coin.name.clone().to_lowercase(), coin);
     }
+
+    let mut sum = HashMap::new();
+
+    for elem in records.iter() {
+        let name = &elem.name;
+        let counter = sum.entry(name).or_insert(0.0);
+
+        *counter += elem.amount * coins.get(name).unwrap().get_current_price("usd");
+    }
+
+    println! {"{:?}", sum};
 
     println!("Total value: ${}", total);
 
