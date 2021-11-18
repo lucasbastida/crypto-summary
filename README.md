@@ -1,6 +1,6 @@
 
 # Crypto 
-Checks price of your portfolio (WIP) and other cryptocurrencies from coingecko.com.
+Checks price of your portfolio (WIP) and other cryptocurrencies from coingecko.com. Created to practice Rust.
 
 
 ## Usage

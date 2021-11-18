@@ -1,4 +1,5 @@
 use clap::{App, Arg};
+use std::collections::HashMap;
 
 mod crytocurrency;
 mod portfolio;
@@ -34,15 +35,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut records: Vec<portfolio::Record> = portfolio::get_records("input/input.csv");
 
-    portfolio::print_portfolio(&records);
-
     //calculate value of record
+    let mut coins: HashMap<String,crytocurrency::Coin> = HashMap::new();
+
+    let mut total: f32 = 0.0;
+
     for record in records.iter() {
         let coin = crytocurrency::search_crypto(&record.name).await?;
         let value = coin.get_current_price("usd") * record.amount;
 
-        println!("Value of {}: {}", coin.name, value);
+        println!("Value of {}: {} USD in {}", coin.name, value, record.location);
+        total += value;
     }
+
+    println!("Total value: ${}", total);
 
     Ok(())
 }

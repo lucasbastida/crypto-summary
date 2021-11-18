@@ -5,10 +5,9 @@ use std::fs::File;
 pub struct Record {
     pub name: String,
     pub amount: f32,
-    location: Option<String>,
+    #[serde(default)]
+    pub location: String
 }
-
-
 
 pub fn print_portfolio(records: &Vec<Record>) {
     for result in records.iter() {
