@@ -16,6 +16,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .short('f')
                 .long("file"),
         )
+        .arg(
+            Arg::new("email")
+                .about("who to send your summary")
+                .takes_value(true)
+                .short('e')
+                .long("email"),
+        )
         .subcommand(
             App::new("search").about("Search one or more crypto").arg(
                 Arg::new("name")
@@ -47,14 +54,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let records: Vec<portfolio::Record> = portfolio::get_records(file);
             let portfolio_string = portfolio::records_summary(records).await?;
 
+            match matches.value_of("email") {
+                Some(mail) => {
+                    let email = email::create_email(portfolio_string, mail);
+                    email::send_email(email);
+                }
+                None => (),
+            };
+
             // email
-            let email = email::create_email(portfolio_string);
-            email::send_email(email);
         } // If no subcommand was used it'll match the tuple ("", None)
         _ => unreachable!(), // If all subcommands are defined above, anything else is unreachabe!()
     }
 
     Ok(())
 }
-
-

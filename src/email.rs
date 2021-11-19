@@ -8,11 +8,11 @@ struct MailerConfig {
     pw: String,
 }
 
-pub fn create_email(portfolio_msg: String) -> Message {
+pub fn create_email(portfolio_msg: String, to: &str) -> Message {
     let email = Message::builder()
-        .from("NoBody <nobody@domain.tld>".parse().unwrap())
-        .to("Hei <test@example.com>".parse().unwrap())
-        .subject("Happy new year")
+        .from("Crypto-Bot <nobody@domain.tld>".parse().unwrap())
+        .to(format!("Hi <{}>", to).parse().unwrap())
+        .subject("Crypto summary")
         .body(portfolio_msg)
         .unwrap();
     return email;
