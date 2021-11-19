@@ -26,9 +26,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .subcommand(
             App::new("search").about("Search one or more crypto").arg(
                 Arg::new("name")
-                    .multiple_occurrences(true)
                     .takes_value(true)
-                    .required(true),
+                    .required(true)
+                    .multiple_values(true),
             ),
         )
         .get_matches();
@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None => {
             let file = match matches.value_of("file") {
                 Some(file) => {
-                    print!("Using file {}", file);
+                    println!("Using file {}", file);
                     file
                 }
                 None => {
