@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
-use url::{ParseError, Url};
+use url:: Url;
 
 #[derive(Debug, Deserialize)]
 pub struct Coin {
@@ -15,9 +15,9 @@ impl Coin {
         *self.market_data.current_price.get(currency).unwrap()
     }
 
-    pub fn get_7d(&self) -> &Vec<f32> {
-        &self.market_data.sparkline_7d.price
-    }
+    // pub fn get_7d(&self) -> &Vec<f32> {
+    //     &self.market_data.sparkline_7d.price
+    // }
 }
 
 impl fmt::Display for Coin {
@@ -95,4 +95,16 @@ pub async fn search_crypto(coin: &str) -> Result<Coin, Box<dyn std::error::Error
         .await?;
 
     Ok(resp)
+}
+
+pub async fn search(names: Vec<&str>) -> Result<(), Box<dyn std::error::Error>> {
+    //load coin structs into a vector
+    let coins = load_crypto(names).await?;
+
+    // print vector of coin value
+    for elem in coins.iter() {
+        println!("{}", elem);
+    }
+
+    Ok(())
 }
