@@ -42,13 +42,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let records: Vec<portfolio::Record> = portfolio::get_records(file);
         let portfolio_string = portfolio::records_summary(records).await?;
 
-        match matches.value_of("email") {
-            Some(mail) => {
-                let email = email::create_email(portfolio_string, mail);
-                email::send_email(email);
-            }
-            None => (),
-        };
+        if let Some(mail) = matches.value_of("email") {
+            let email = email::create_email(portfolio_string, mail);
+            email::send_email(email);
+        }
     }
 
     Ok(())

@@ -66,24 +66,13 @@ pub async fn get_crypto_list(
     crypto_names: Vec<&str>,
 ) -> Result<Vec<Crypto>, Box<dyn std::error::Error>> {
     // Creating Url struct
-    let mut crypto_url = get_coin_url();
-
     let mut coins = Vec::new();
-
+    
     // for each crypto, deserialize json and place in vec
     for elem in crypto_names {
-        crypto_url
-            .path_segments_mut()
-            .map_err(|_| "cannot be base")?
-            .pop()
-            .push(elem);
+        let crypto = get_crypto(elem).await.unwrap();
 
-        let resp = reqwest::get(crypto_url.as_str())
-            .await?
-            .json::<Coin>()
-            .await?;
-
-        coins.push(Crypto::from(resp));
+        coins.push(crypto);
     }
 
     Ok(coins)
@@ -105,11 +94,10 @@ pub async fn get_crypto(coin: &str) -> Result<Crypto, Box<dyn std::error::Error>
     Ok(Crypto::from(resp))
 }
 
+//searches and print crypto names
 pub async fn search(names: Vec<&str>) -> Result<(), Box<dyn std::error::Error>> {
-    //load coin structs into a vector
     let coins = get_crypto_list(names).await?;
 
-    // print vector of coin value
     for elem in coins.iter() {
         println!("{}", elem);
     }

@@ -22,7 +22,6 @@ pub fn send_email(email: Message) -> () {
     dotenv::dotenv().expect("Failed to read .env file");
     let config = match envy::prefixed("EMAIL_SMTP_").from_env::<MailerConfig>() {
         Ok(config) => {
-            println!("{:?}", config);
             config
         }
         Err(e) => panic!("Couldn't read mailer config ({})", e),
