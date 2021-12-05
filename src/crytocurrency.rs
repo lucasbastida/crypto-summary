@@ -47,8 +47,7 @@ impl fmt::Display for Crypto {
     }
 }
 
-pub async fn load_crypto(crypto_names: Vec<&str>) -> Result<Vec<Crypto>, Box<dyn std::error::Error>> {
-    // Creating Url struct
+fn get_coin_url() -> Url {
     let mut crypto_url = Url::parse("https://api.coingecko.com/").unwrap();
     crypto_url
         .query_pairs_mut()
@@ -58,14 +57,26 @@ pub async fn load_crypto(crypto_names: Vec<&str>) -> Result<Vec<Crypto>, Box<dyn
         .append_pair("developer_data", "false")
         .append_pair("sparkline", "false");
 
+    crypto_url.set_path("api/v3/coins/empty");
+
+    return crypto_url;
+}
+
+pub async fn load_crypto(
+    crypto_names: Vec<&str>,
+) -> Result<Vec<Crypto>, Box<dyn std::error::Error>> {
+    // Creating Url struct
+    let mut crypto_url = get_coin_url();
+
     let mut coins = Vec::new();
 
     // for each crypto, deserialize json and place in vec
     for elem in crypto_names {
-        let mut path = String::from("api/v3/coins/");
-        path.push_str(elem);
-
-        crypto_url.set_path(&path);
+        crypto_url
+            .path_segments_mut()
+            .map_err(|_| "cannot be base")?
+            .pop()
+            .push(elem);
 
         let resp = reqwest::get(crypto_url.as_str())
             .await?
@@ -79,19 +90,12 @@ pub async fn load_crypto(crypto_names: Vec<&str>) -> Result<Vec<Crypto>, Box<dyn
 }
 
 pub async fn search_crypto(coin: &str) -> Result<Crypto, Box<dyn std::error::Error>> {
-    let mut crypto_url = Url::parse("https://api.coingecko.com/").unwrap();
+    let mut crypto_url = get_coin_url();
     crypto_url
-        .query_pairs_mut()
-        .append_pair("tickers", "false")
-        .append_pair("market_data", "true")
-        .append_pair("community_data", "false")
-        .append_pair("developer_data", "false")
-        .append_pair("sparkline", "true");
-
-    let mut path = String::from("api/v3/coins/");
-    path.push_str(coin);
-
-    crypto_url.set_path(&path);
+        .path_segments_mut()
+        .map_err(|_| "cannot be base")?
+        .pop()
+        .push(coin);
 
     let resp = reqwest::get(crypto_url.as_str())
         .await?
