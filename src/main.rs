@@ -33,38 +33,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .get_matches();
 
-    match matches.subcommand() {
-        Some(("search", search_matches)) => {
-            // Now we have a reference to clone's matches
-            let crypto_names = search_matches.values_of("name").unwrap().collect();
-            crytocurrency::search(crypto_names).await?;
-        }
-        None => {
-            let file = match matches.value_of("file") {
-                Some(file) => {
-                    println!("Using file {}", file);
-                    file
-                }
-                None => {
-                    println!("Using file input/input.csv");
-                    "input/input.csv"
-                }
-            };
+    if let Some(("search", search_matches)) = matches.subcommand() {
+        let crypto_names = search_matches.values_of("name").unwrap().collect();
+        crytocurrency::search(crypto_names).await?;
+    } else {
+        let file = matches.value_of("file").unwrap();
 
-            let records: Vec<portfolio::Record> = portfolio::get_records(file);
-            let portfolio_string = portfolio::records_summary(records).await?;
+        let records: Vec<portfolio::Record> = portfolio::get_records(file);
+        let portfolio_string = portfolio::records_summary(records).await?;
 
-            match matches.value_of("email") {
-                Some(mail) => {
-                    let email = email::create_email(portfolio_string, mail);
-                    email::send_email(email);
-                }
-                None => (),
-            };
-
-            // email
-        } // If no subcommand was used it'll match the tuple ("", None)
-        _ => unreachable!(), // If all subcommands are defined above, anything else is unreachabe!()
+        match matches.value_of("email") {
+            Some(mail) => {
+                let email = email::create_email(portfolio_string, mail);
+                email::send_email(email);
+            }
+            None => (),
+        };
     }
 
     Ok(())
