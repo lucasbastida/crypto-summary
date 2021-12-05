@@ -22,7 +22,7 @@ pub async fn records_summary(records: Vec<Record>) -> Result<String, Box<dyn std
     let mut total: f32 = 0.0;
 
     for record in records.iter() {
-        let coin = crytocurrency::search_crypto(&record.name).await?;
+        let coin = crytocurrency::get_crypto(&record.name).await?;
 
         let value = coin.current_price * record.amount;
 

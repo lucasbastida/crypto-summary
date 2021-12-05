@@ -62,7 +62,7 @@ fn get_coin_url() -> Url {
     return crypto_url;
 }
 
-pub async fn load_crypto(
+pub async fn get_crypto_list(
     crypto_names: Vec<&str>,
 ) -> Result<Vec<Crypto>, Box<dyn std::error::Error>> {
     // Creating Url struct
@@ -89,7 +89,7 @@ pub async fn load_crypto(
     Ok(coins)
 }
 
-pub async fn search_crypto(coin: &str) -> Result<Crypto, Box<dyn std::error::Error>> {
+pub async fn get_crypto(coin: &str) -> Result<Crypto, Box<dyn std::error::Error>> {
     let mut crypto_url = get_coin_url();
     crypto_url
         .path_segments_mut()
@@ -107,7 +107,7 @@ pub async fn search_crypto(coin: &str) -> Result<Crypto, Box<dyn std::error::Err
 
 pub async fn search(names: Vec<&str>) -> Result<(), Box<dyn std::error::Error>> {
     //load coin structs into a vector
-    let coins = load_crypto(names).await?;
+    let coins = get_crypto_list(names).await?;
 
     // print vector of coin value
     for elem in coins.iter() {
