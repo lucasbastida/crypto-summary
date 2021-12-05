@@ -1,49 +1,53 @@
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::fmt;
-use url:: Url;
+use url::Url;
 
 #[derive(Debug, Deserialize)]
-pub struct Coin {
-    pub name: String,
-    pub symbol: String,
+struct Coin {
+    name: String,
+    symbol: String,
     market_data: Market,
 }
 
-impl Coin {
-    pub fn get_current_price(&self, currency: &str) -> f32 {
-        *self.market_data.current_price.get(currency).unwrap()
-    }
-
-    // pub fn get_7d(&self) -> &Vec<f32> {
-    //     &self.market_data.sparkline_7d.price
-    // }
+#[derive(Debug, Deserialize)]
+struct Market {
+    current_price: UsdPrice,
 }
 
-impl fmt::Display for Coin {
+#[derive(Debug, Deserialize)]
+struct UsdPrice {
+    usd: f32,
+}
+
+pub struct Crypto {
+    pub name: String,
+    pub symbol: String,
+    pub current_price: f32,
+}
+
+impl From<Coin> for Crypto {
+    fn from(i: Coin) -> Self {
+        Self {
+            name: i.name,
+            symbol: i.symbol,
+            current_price: i.market_data.current_price.usd,
+        }
+    }
+}
+
+impl fmt::Display for Crypto {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
             "{} ({}) Market price: {} USD",
             self.name.as_str(),
             self.symbol.as_str(),
-            self.get_current_price("usd")
+            self.current_price,
         )
     }
 }
 
-#[derive(Debug, Deserialize)]
-struct Market {
-    current_price: HashMap<String, f32>,
-    sparkline_7d: Sparkline,
-}
-
-#[derive(Debug, Deserialize)]
-struct Sparkline {
-    price: Vec<f32>,
-}
-
-pub async fn load_crypto(crypto_names: Vec<&str>) -> Result<Vec<Coin>, Box<dyn std::error::Error>> {
+pub async fn load_crypto(crypto_names: Vec<&str>) -> Result<Vec<Crypto>, Box<dyn std::error::Error>> {
     // Creating Url struct
     let mut crypto_url = Url::parse("https://api.coingecko.com/").unwrap();
     crypto_url
@@ -52,7 +56,7 @@ pub async fn load_crypto(crypto_names: Vec<&str>) -> Result<Vec<Coin>, Box<dyn s
         .append_pair("market_data", "true")
         .append_pair("community_data", "false")
         .append_pair("developer_data", "false")
-        .append_pair("sparkline", "true");
+        .append_pair("sparkline", "false");
 
     let mut coins = Vec::new();
 
@@ -68,13 +72,13 @@ pub async fn load_crypto(crypto_names: Vec<&str>) -> Result<Vec<Coin>, Box<dyn s
             .json::<Coin>()
             .await?;
 
-        coins.push(resp);
+        coins.push(Crypto::from(resp));
     }
 
     Ok(coins)
 }
 
-pub async fn search_crypto(coin: &str) -> Result<Coin, Box<dyn std::error::Error>> {
+pub async fn search_crypto(coin: &str) -> Result<Crypto, Box<dyn std::error::Error>> {
     let mut crypto_url = Url::parse("https://api.coingecko.com/").unwrap();
     crypto_url
         .query_pairs_mut()
@@ -94,7 +98,7 @@ pub async fn search_crypto(coin: &str) -> Result<Coin, Box<dyn std::error::Error
         .json::<Coin>()
         .await?;
 
-    Ok(resp)
+    Ok(Crypto::from(resp))
 }
 
 pub async fn search(names: Vec<&str>) -> Result<(), Box<dyn std::error::Error>> {

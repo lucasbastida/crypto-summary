@@ -3,7 +3,7 @@ use std::fs::File;
 
 use std::collections::HashMap;
 
-use crate::{crytocurrency};
+use crate::crytocurrency;
 
 
 #[derive(Debug, Deserialize)]
@@ -24,7 +24,7 @@ pub async fn records_summary(records: Vec<Record>) -> Result<String, Box<dyn std
     for record in records.iter() {
         let coin = crytocurrency::search_crypto(&record.name).await?;
 
-        let value = coin.get_current_price("usd") * record.amount;
+        let value = coin.current_price * record.amount;
 
         let record_value = format!(
             "Value of {}: {} USD in {}",
@@ -46,7 +46,7 @@ pub async fn records_summary(records: Vec<Record>) -> Result<String, Box<dyn std
         let name = &elem.name;
         let counter = sum.entry(name).or_insert(0.0);
 
-        *counter += elem.amount * coins.get(name).unwrap().get_current_price("usd");
+        *counter += elem.amount * coins.get(name).unwrap().current_price;
     }
 
     for (key, value) in sum.iter() {
